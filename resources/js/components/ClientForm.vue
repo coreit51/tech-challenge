@@ -3,6 +3,13 @@
         <h1 class="mb-6">Clients -> Add New Client</h1>
 
         <div class="max-w-lg mx-auto">
+            <p v-if="errors.length" class="error-sec">
+    <b>Please correct the following error(s):</b>
+    <ul>
+      <li v-for="error in errors">{{ error }}</li>
+    </ul>
+  </p>
+
             <div class="form-group">
                 <label for="name">Name</label>
                 <input
@@ -85,47 +92,50 @@ export default {
                 address: "",
                 city: "",
                 postcode: ""
-            }
+            },
+            errors: []
         };
     },
 
     methods: {
         storeClient(e) {
             this.errors = [];
-
-            let check = false;
             if (!this.client.name) {
-                this.errors.push("Name required.");
+                this.errors.push("Name is required.");
             } else if (this.client.name.length > 190) {
                 this.errors.push(
                     "Name should be be greater than 190 characters."
                 );
-            } else if (!this.client.email || this.client.email) {
-                check = true;
-            } else if (
-                /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(
-                    this.client.email
-                )
-            ) {
-                console.log("a");
-
-                this.errors.push("Please enter a valid email address.");
-            } else if (/^[0-9]$/.test(this.client.phone)) {
-                console.log("b");
-
-                this.errors.push("Please enter a valid phone number.");
-            } else {
-                if (check == true) {
-                    console.log("comes");
-                    axios.post("/clients", this.client).then(data => {
-                        window.location.href = data.data.url;
-                    });
-                } else {
-                    this.errors.push("Please fill email or phone number.");
-                }
             }
+
+            if(this.client.email && !/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(this.client.email)) {
+                this.errors.push("Please enter a valid email address.");
+            }
+
+            if(this.client.phone && !/^[\+\d]?(?:[\d\s]*)$/.test(this.client.phone)) {
+                this.errors.push("Please enter a valid phone.");
+            } else if(this.client.phone && (this.client.phone.length < 5 || this.client.phone.length > 15)) {
+                this.errors.push("Length of the phone number should be min of 5 digits and upto 15 digits.");
+            }
+
+            if(!this.client.phone && !this.client.email) {
+                this.errors.push("At least one of (phone/email) is required");
+            }
+
+            if(!this.errors.length) {
+                axios.post("/clients", this.client).then(data => {
+                    window.location.href = data.data.url;
+                });
+            }
+
             e.preventDefault();
         }
     }
 };
 </script>
+
+<style scoped>
+.error-sec li {
+    color: red;
+}
+</style>
